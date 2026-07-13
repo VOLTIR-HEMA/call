@@ -12,6 +12,7 @@ window.addEventListener('load', () => {
     const muteIcon = toggleMuteBtn.querySelector('i');
     const toggleVideoBtn = document.getElementById('toggle-video-btn');
     const videoIcon = toggleVideoBtn.querySelector('i');
+    const regenerateIdBtn = document.getElementById('regenerate-id-btn');
     const endCallBtn = document.getElementById('end-call-btn');
 
     let localStream; // لتخزين بث الفيديو المحلي
@@ -20,16 +21,53 @@ window.addEventListener('load', () => {
     let isMuted = false;
     let isVideoOff = false;
 
-    // --- الخطوة 1: إعداد PeerJS والحصول على ID ---
-    // نقوم بإنشاء كائن Peer جديد. سيتم الاتصال بخادم PeerJS السحابي تلقائيًا
-    // والحصول على ID فريد. هذا الـ ID هو الذي ستشاركه مع صديقك.
-    // المكتبة تستخدم خوادم STUN/TURN عامة تلقائياً، مما يحل مشكلة الـ VPN.
-    peer = new Peer();
+    // --- الخطوة 1: إعداد PeerJS بكود عشوائي قصير ---
+    function initializePeer(peerId) {
+        // إذا كان هناك اتصال قديم، قم بتدميره أولاً
+        if (peer) {
+            peer.destroy();
+        }
 
-    // عندما يكون الـ Peer جاهزًا ويحصل على ID
-    peer.on('open', (id) => {
-        console.log('My peer ID is: ' + id);
-        myIdSpan.textContent = id; // عرض الـ ID على الشاشة
+        myIdSpan.textContent = 'جارِ التحميل...';
+        myIdSpan.style.color = 'white';
+
+        peer = new Peer(peerId);
+
+        // عندما يكون الـ Peer جاهزًا ويحصل على ID
+        peer.on('open', (id) => {
+            console.log('My peer ID is: ' + id);
+            myIdSpan.textContent = id; // عرض الـ ID النهائي على الشاشة
+            myIdSpan.style.color = 'var(--green)';
+        });
+
+        // التعامل مع الأخطاء (مثل أن يكون الكود مستخدماً)
+        peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+            if (err.type === 'unavailable-id') {
+                // إذا كان الكود مستخدمًا، أنشئ واحدًا جديدًا وحاول مرة أخرى
+                alert(`الكود ${peerId} مستخدم. سيتم إنشاء كود جديد.`);
+                setTimeout(() => initializePeer(generateRandomId()), 100); // تأخير بسيط قبل المحاولة مرة أخرى
+            } else {
+                alert('حدث خطأ في الاتصال. يرجى تحديث الصفحة.');
+            }
+        });
+
+        // ربط باقي الأحداث بالـ peer الجديد
+        setupCallListeners();
+    }
+
+    // دالة لإنشاء كود عشوائي من 5 أرقام
+    function generateRandomId() {
+        // يولد رقم بين 10000 و 99999
+        return Math.floor(10000 + Math.random() * 90000).toString();
+    }
+
+    // بدء العملية بكود عشوائي
+    initializePeer(generateRandomId());
+
+    // إضافة وظيفة لزر إعادة إنشاء الكود
+    regenerateIdBtn.addEventListener('click', () => {
+        initializePeer(generateRandomId());
     });
 
     // --- الخطوة 2: الوصول إلى الكاميرا والمايكروفون ---
@@ -45,26 +83,29 @@ window.addEventListener('load', () => {
         });
 
     // --- الخطوة 3: التعامل مع المكالمات الواردة ---
-    // عندما يتصل بك شخص آخر باستخدام الـ ID الخاص بك
-    peer.on('call', (call) => {
-        // تخزين المكالمة الواردة
-        currentCall = call;
-        updateUiForCall();
+    // تم نقل هذا الجزء إلى دالة منفصلة ليتم استدعاؤها بعد إنشاء الـ peer
+    function setupCallListeners() {
+        // عندما يتصل بك شخص آخر باستخدام الـ ID الخاص بك
+        peer.on('call', (call) => {
+            // تخزين المكالمة الواردة
+            currentCall = call;
+            updateUiForCall();
 
-        // الرد على المكالمة وإرسال بث الفيديو والصوت المحلي الخاص بك
-        call.answer(localStream);
+            // الرد على المكالمة وإرسال بث الفيديو والصوت المحلي الخاص بك
+            call.answer(localStream);
 
-        // عندما يرسل الطرف الآخر بث الفيديو الخاص به
-        call.on('stream', (remoteStream) => {
-            // عرض الفيديو الخاص به على الشاشة
-            remoteVideo.srcObject = remoteStream;
+            // عندما يرسل الطرف الآخر بث الفيديو الخاص به
+            call.on('stream', (remoteStream) => {
+                // عرض الفيديو الخاص به على الشاشة
+                remoteVideo.srcObject = remoteStream;
+            });
+
+            // عند إغلاق المكالمة من الطرف الآخر
+            call.on('close', () => {
+                endCall();
+            });
         });
-
-        // عند إغلاق المكالمة من الطرف الآخر
-        call.on('close', () => {
-            endCall();
-        });
-    });
+    }
 
     // --- وظائف مساعدة لتحديث الواجهة ---
     function updateUiForCall() {
@@ -79,12 +120,12 @@ window.addEventListener('load', () => {
 
         // إعادة الأيقونات والحالة إلى الوضع الافتراضي
         isMuted = false;
-        localStream.getAudioTracks()[0].enabled = true;
+        if (localStream) localStream.getAudioTracks()[0].enabled = true;
         muteIcon.classList.remove('gg-mic-off');
         muteIcon.classList.add('gg-mic');
 
         isVideoOff = false;
-        localStream.getVideoTracks()[0].enabled = true;
+        if (localStream) localStream.getVideoTracks()[0].enabled = true;
         videoIcon.classList.remove('gg-no-camera');
         videoIcon.classList.add('gg-camera');
     }
@@ -92,7 +133,15 @@ window.addEventListener('load', () => {
     // --- الخطوة 4: إجراء مكالمة ---
     // عند الضغط على زر "اتصال"
     callBtn.addEventListener('click', () => {
+        if (!localStream) {
+            alert('يرجى السماح بالوصول إلى الكاميرا والمايكروفون أولاً.');
+            return;
+        }
         const remoteId = remoteIdInput.value;
+        if (!remoteId) {
+            alert('يرجى إدخال كود صديقك.');
+            return;
+        }
         const call = peer.call(remoteId, localStream); // اتصل بالـ ID الذي تم إدخاله
 
         // تخزين المكالمة الصادرة
@@ -114,7 +163,7 @@ window.addEventListener('load', () => {
     // زر كتم الصوت
     toggleMuteBtn.addEventListener('click', () => {
         isMuted = !isMuted; // عكس الحالة
-        localStream.getAudioTracks()[0].enabled = !isMuted;
+        if (localStream) localStream.getAudioTracks()[0].enabled = !isMuted;
         // تغيير الأيقونة بناءً على الحالة
         muteIcon.classList.toggle('gg-mic', !isMuted);
         muteIcon.classList.toggle('gg-mic-off', isMuted);
@@ -123,7 +172,7 @@ window.addEventListener('load', () => {
     // زر إيقاف/تشغيل الكاميرا
     toggleVideoBtn.addEventListener('click', () => {
         isVideoOff = !isVideoOff; // عكس الحالة
-        localStream.getVideoTracks()[0].enabled = !isVideoOff;
+        if (localStream) localStream.getVideoTracks()[0].enabled = !isVideoOff;
         // إخفاء/إظهار الفيديو المحلي وتغيير الأيقونة
         localVideo.style.display = isVideoOff ? 'none' : 'block';
         videoIcon.classList.toggle('gg-camera', !isVideoOff);
