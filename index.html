@@ -10,6 +10,7 @@
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/mic-off.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/camera.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/no-camera.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/redo.css" rel="stylesheet">
     <style>
         :root { --red: #e74c3c; --green: #2ecc71; --blue: #3498db; --dark: #2c3e50; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #222; color: white; }
@@ -41,8 +42,10 @@
             background-color: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(5px);
             gap: 20px;
+            text-align: center;
         }
-        #my-id-container { background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 10px; text-align: center; }
+        #my-id-container { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 10px; }
+        #regenerate-id-btn { background: none; border: none; cursor: pointer; color: white; padding: 5px; display: flex; align-items: center; }
         #my-id { font-weight: bold; color: var(--green); user-select: all; cursor: pointer; }
         #remote-id-input { padding: 12px; border-radius: 8px; border: 1px solid #555; background: #333; color: white; font-size: 16px; text-align: center; }
         #call-btn { padding: 12px 25px; border-radius: 8px; border: none; font-size: 18px; background-color: var(--green); color: white; cursor: pointer; }
@@ -72,7 +75,10 @@
         <video id="local-video" autoplay muted></video>
         
         <div id="pre-call-controls">
-            <div id="my-id-container"><h3>الكود الخاص بك (انسخه وأرسله): <span id="my-id">...</span></h3></div>
+            <div id="my-id-container">
+                <h3>الكود الخاص بك: <span id="my-id">جارِ التحميل...</span></h3>
+                <button id="regenerate-id-btn" title="إنشاء كود جديد"><i class="gg-icon gg-redo"></i></button>
+            </div>
             <input type="text" id="remote-id-input" placeholder="أدخل كود صديقك هنا">
             <button id="call-btn">اتصال</button>
         </div>
