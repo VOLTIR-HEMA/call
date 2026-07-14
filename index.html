@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+د<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
 <head>
@@ -140,6 +140,7 @@
             <input type="password" id="login-password" placeholder="كلمة المرور" required>
             <button type="submit">دخول</button>
             <p id="auth-error"></p>
+            <p><span id="forgot-password" class="toggle-form">نسيت كلمة المرور؟</span></p>
             <p>ليس لديك حساب؟ <span id="toggle-to-signup" class="toggle-form">أنشئ حساباً</span></p>
         </form>
 
@@ -150,8 +151,16 @@
             <input type="file" id="signup-avatar" accept="image/*">
             <input type="password" id="signup-password" placeholder="كلمة المرور" required>
             <button type="submit">إنشاء</button>
+            <p id="signup-error" style="color: var(--red); text-align: center; height: 20px; min-height: 20px;"></p>
             <p>لديك حساب بالفعل؟ <span id="toggle-to-login" class="toggle-form">سجل الدخول</span></p>
         </form>
+    </div>
+    <div id="verify-email-container" style="display: none; text-align: center; color: white; padding: 20px;">
+        <h2>الرجاء تفعيل حسابك</h2>
+        <p>لقد أرسلنا رابط تفعيل إلى بريدك الإلكتروني. الرجاء الضغط على الرابط لتتمكن من استخدام التطبيق.</p>
+        <p style="margin-top: 20px;">لم تستلم البريد؟ <span id="resend-verification-email" class="toggle-form">إعادة إرسال</span></p>
+        <p style="margin-top: 10px;"><span id="back-to-login" class="toggle-form">العودة لتسجيل الدخول</span></p>
+        <p id="verify-email-error" style="color: var(--red); height: 20px; min-height: 20px;"></p>
     </div>
 
     <!-- Incoming Call Screen -->
