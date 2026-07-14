@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,46 +11,159 @@
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/mic-off.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/camera.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/no-camera.css" rel="stylesheet">
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/redo.css" rel="stylesheet">
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/redo.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/comment.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/more-vertical.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/user.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/log-out.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/close.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/check.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/add.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/copy.css" rel="stylesheet">
+
     <style>
         :root { --red: #e74c3c; --green: #2ecc71; --blue: #3498db; --dark: #2c3e50; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #222; color: white; }
-
-        #call-wrapper { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-
-        /* شاشة الفيديو الرئيسية (للطرف الآخر) */
-        #remote-video { width: 100%; height: 100%; object-fit: cover; background-color: #333; }
-
-        /* شاشة الفيديو المحلية (صورة داخل صورة) */
-        #local-video {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 20vw;
-            max-width: 240px;
-            min-width: 120px;
-            border-radius: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-        }
-
-        /* شاشة الانتظار قبل المكالمة */
-        #pre-call-controls {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+        
+        /* شاشة المصادقة (تسجيل الدخول) */
+        #auth-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            gap: 20px;
-            text-align: center;
+            background-color: #222; z-index: 100; gap: 15px;
         }
-        #my-id-container { display: flex; align-items: center; gap: 15px; background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 10px; }
-        #regenerate-id-btn { background: none; border: none; cursor: pointer; color: white; padding: 5px; display: flex; align-items: center; }
-        #my-id { font-weight: bold; color: var(--green); user-select: all; cursor: pointer; }
-        #remote-id-input { padding: 12px; border-radius: 8px; border: 1px solid #555; background: #333; color: white; font-size: 16px; text-align: center; }
-        #call-btn { padding: 12px 25px; border-radius: 8px; border: none; font-size: 18px; background-color: var(--green); color: white; cursor: pointer; }
+        .auth-form { display: flex; flex-direction: column; gap: 10px; width: 300px; }
+        .auth-form h2 { text-align: center; }
+        .auth-form input { padding: 12px; border-radius: 8px; border: 1px solid #555; background: #333; color: white; font-size: 16px; }
+        .auth-form button { padding: 12px; border-radius: 8px; border: none; font-size: 16px; background-color: var(--blue); color: white; cursor: pointer; }
+        #auth-error { color: var(--red); text-align: center; height: 20px; }
+        #toggle-form { color: var(--blue); cursor: pointer; text-decoration: underline; }
+        
+        /* الهيكل الرئيسي للتطبيق */
+        #app-container { display: none; height: 100vh; width: 100vw; flex-direction: row; }
+        #sidebar { width: 320px; background: #2c3e50; display: flex; flex-direction: column; border-left: 1px solid #34495e; }
+        #main-content { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #34495e; }
+        #main-content .welcome-message { text-align: center; color: #95a5a6; }
+
+        /* الشريط الجانبي */
+        #sidebar-header { padding: 15px; display: flex; align-items: center; gap: 10px; background: #253c50; }
+        #sidebar-header img { width: 40px; height: 40px; border-radius: 50%; }
+        #sidebar-header span { font-weight: bold; flex-grow: 1; }
+        #sidebar-header .icon-btn { background: none; border: none; color: white; cursor: pointer; }
+        #friends-list { flex-grow: 1; overflow-y: auto; }
+        .friend-item { display: flex; align-items: center; gap: 15px; padding: 15px; cursor: pointer; transition: background 0.2s; }
+        .friend-item:hover { background: #34495e; }
+        .friend-item img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .friend-item .info { flex-grow: 1; }
+        .friend-item .info span { font-weight: bold; }
+        .friend-item .status { display: flex; align-items: center; gap: 5px; font-size: 0.8em; color: #95a5a6; }
+        .friend-item .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #7f8c8d; }
+        .friend-item .status-dot.online { background-color: var(--green); }
+
+        /* القائمة المنبثقة للتفاعل مع الأصدقاء */
+        #friend-context-menu {
+            position: absolute; display: none; background: #2c3e50; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            padding: 10px; z-index: 100; list-style: none; margin: 0;
+        }
+        #friend-context-menu li { padding: 10px 15px; cursor: pointer; border-radius: 5px; display: flex; align-items: center; gap: 10px; }
+        #friend-context-menu li:hover { background: #34495e; }
+
+        /* واجهة إضافة الأصدقاء والإعدادات (Modal) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 500; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: #2c3e50; padding: 30px; border-radius: 10px; width: 400px; position: relative; }
+        .modal-content h2 { margin-top: 0; }
+        .modal-close-btn { position: absolute; top: 15px; left: 15px; background: none; border: none; color: white; cursor: pointer; }
+        .tab-buttons { display: flex; border-bottom: 1px solid #34495e; margin-bottom: 20px; }
+        .tab-btn { flex-grow: 1; background: none; border: none; color: #95a5a6; padding: 15px; cursor: pointer; font-size: 16px; }
+        .tab-btn.active { color: white; border-bottom: 2px solid var(--blue); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        #search-results-list, #requests-list { display: flex; flex-direction: column; gap: 10px; }
+        .search-result, .request-item { display: flex; align-items: center; gap: 10px; background: #34495e; padding: 10px; border-radius: 8px; }
+        .search-result img, .request-item img { width: 40px; height: 40px; border-radius: 50%; }
+        .search-result span, .request-item span { flex-grow: 1; }
+        .search-result button, .request-item button { background: var(--blue); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .profile-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #34495e;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .profile-info h3 { margin: 0; color: var(--blue); }
+        #copy-username-btn { background: none; border: none; color: white; cursor: pointer; display: flex; }
+        .request-item .actions { display: flex; gap: 5px; }
+
+        /* شاشة المكالمة الواردة */
+        #incoming-call-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; /* مخفي بشكل افتراضي */
+            flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.8); z-index: 200; gap: 20px;
+        }
+        #incoming-call-container h2 { margin: 0; }
+        #incoming-call-container .caller-info { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        #incoming-call-container img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid white; }
+        #incoming-call-buttons { display: flex; gap: 30px; margin-top: 20px; }
+        #incoming-call-buttons button { width: 70px; height: 70px; border-radius: 50%; border: none; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; }
+        #answer-btn { background-color: var(--green); }
+        #reject-btn { background-color: var(--red); }
+
+        /* واجهة الشات */
+        #chat-view { /* واجهة الشات المستقلة */
+            width: 100%; height: 100%;
+            background: #34495e;
+            display: none;
+            flex-direction: column;
+        }
+        #chat-header { display: flex; align-items: center; gap: 15px; padding: 10px 20px; background: #2c3e50; }
+        #chat-header img { width: 40px; height: 40px; border-radius: 50%; }
+        #chat-header .info { flex-grow: 1; }
+        #chat-header .info span { font-weight: bold; }
+        #chat-header .actions button { background: none; border: none; color: white; cursor: pointer; }
+
+        #messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        #chat-form { display: flex; padding: 10px; }
+        #chat-input { flex-grow: 1; padding: 8px; border: none; border-radius: 5px 0 0 5px; background: #555; color: white; }
+        #chat-form button { padding: 8px 12px; border: none; border-radius: 0 5px 5px 0; background: var(--blue); color: white; cursor: pointer; }
+        .message { padding: 8px 12px; border-radius: 15px; max-width: 75%; word-wrap: break-word; }
+        .message.sent { background-color: var(--blue); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .message.received { background-color: #444; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .message strong { display: block; font-size: 0.8em; opacity: 0.7; margin-bottom: 4px; }
+
+        /* حاوية الإشعارات */
+        #notification-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast-notification {
+            padding: 15px 25px;
+            background-color: var(--dark);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* واجهة المكالمة */
+        #call-view { width: 100%; height: 100%; position: relative; display: none; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; background-color: #111; }
+        #local-video { position: absolute; bottom: 20px; right: 20px; width: 20vw; max-width: 240px; min-width: 120px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.5); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #call-view #chat-container { position: absolute; bottom: 100px; right: 20px; width: 300px; height: 400px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-radius: 10px; display: none; flex-direction: column; }
+        #call-view #chat-container.visible { display: flex; }
 
         /* أزرار التحكم أثناء المكالمة */
         #in-call-controls {
@@ -68,29 +182,126 @@
         .control-btn { background: rgba(255,255,255,0.2); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; }
         .control-btn.red { background-color: var(--red); }
         .gg-icon { --ggs: 1.2; } /* لتكبير حجم الأيقونات */
+
     </style>
 </head>
 <body>
-    <div id="call-wrapper">
-        <video id="remote-video" autoplay></video>
-        <video id="local-video" autoplay muted></video>
-        
-        <div id="pre-call-controls">
-            <div id="my-id-container">
-                <h3>الكود الخاص بك: <span id="my-id">جارِ التحميل...</span></h3>
-                <button id="regenerate-id-btn" title="إنشاء كود جديد"><i class="gg-icon gg-redo"></i></button>
-            </div>
-            <input type="text" id="remote-id-input" placeholder="أدخل كود صديقك هنا">
-            <button id="call-btn">اتصال</button>
+    <!-- 1. شاشة تسجيل الدخول وإنشاء الحساب -->
+    <div id="auth-container">
+        <div id="login-form" class="auth-form">
+            <h2>تسجيل الدخول</h2>
+            <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
+            <input type="password" id="login-password" placeholder="كلمة المرور" required>
+            <button id="login-btn">دخول</button>
+            <p id="auth-error"></p>
+            <p>ليس لديك حساب؟ <span id="toggle-to-signup" class="toggle-form">أنشئ حساباً</span></p>
         </div>
-        
-        <div id="in-call-controls" style="display: none;">
-            <button id="toggle-mute-btn" class="control-btn"><i class="gg-icon gg-mic"></i></button>
-            <button id="toggle-video-btn" class="control-btn"><i class="gg-icon gg-camera"></i></button>
-            <button id="end-call-btn" class="control-btn red"><i class="gg-icon gg-phone"></i></button>
+
+        <div id="signup-form" class="auth-form" style="display: none;">
+            <h2>إنشاء حساب جديد</h2>
+            <input type="text" id="signup-username" placeholder="اسم المستخدم (فريد)" required>
+            <input type="email" id="signup-email" placeholder="البريد الإلكتروني" required>
+            <input type="file" id="signup-avatar" accept="image/*">
+            <input type="password" id="signup-password" placeholder="كلمة المرور" required>
+            <button id="signup-btn">إنشاء</button>
+            <p>لديك حساب بالفعل؟ <span id="toggle-to-login" class="toggle-form">سجل الدخول</span></p>
         </div>
     </div>
+
+    <!-- 3. واجهة المكالمة الواردة -->
+    <div id="incoming-call-container">
+        <div class="caller-info">
+            <img id="caller-avatar" src="https://via.placeholder.com/100" alt="Caller Avatar">
+            <h2 id="caller-name">يتصل بك...</h2>
+        </div>
+        <div id="incoming-call-buttons">
+            <button id="answer-btn" title="رد"><i class="gg-icon gg-phone"></i></button>
+            <button id="reject-btn" title="رفض"><i class="gg-icon gg-phone"></i></button>
+        </div>
+    </div>
+
+    <!-- 5. حاوية الإشعارات -->
+    <div id="notification-container"></div>
+
+    <!-- 2. واجهة التطبيق الرئيسية (مخفية) -->
+    <div id="app-container">
+        <!-- الشريط الجانبي -->
+        <div id="sidebar">
+            <div id="sidebar-header">
+                <img id="sidebar-avatar" src="https://via.placeholder.com/40" alt="My Avatar">
+                <span id="sidebar-username">...</span>
+                <button id="add-friend-btn" class="icon-btn" title="إضافة أصدقاء"><i class="gg-icon gg-add"></i></button>
+                <button id="settings-btn" class="icon-btn" title="الإعدادات"><i class="gg-icon gg-user"></i></button>
+            </div>
+            <div id="friends-list">
+                <!-- سيتم ملء قائمة الأصدقاء هنا بواسطة JavaScript -->
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div id="main-content">
+            <div class="welcome-message">
+                <h2>أهلاً بك!</h2>
+                <p>اختر صديقاً من القائمة لبدء المحادثة.</p>
+            </div>
+
+            <!-- واجهة الشات المستقلة -->
+            <div id="chat-view">
+                <div id="chat-header">
+                    <img id="chat-friend-avatar" src="https://via.placeholder.com/40">
+                    <div class="info">
+                        <span id="chat-friend-name">...</span>
+                    </div>
+                    <div class="actions">
+                        <button id="chat-video-call-btn" title="مكالمة فيديو"><i class="gg-icon gg-camera"></i></button>
+                        <button id="chat-voice-call-btn" title="مكالمة صوتية"><i class="gg-icon gg-phone"></i></button>
+                    </div>
+                </div>
+                <div id="messages"></div>
+                <form id="chat-form">
+                    <input type="text" id="chat-input" placeholder="اكتب رسالتك..." autocomplete="off">
+                    <button type="submit">إرسال</button>
+                </form>
+            </div>
+
+            <!-- واجهة المكالمة -->
+            <div id="call-view">
+                <video id="remote-video" autoplay></video>
+                <video id="local-video" autoplay muted></video>
+                <div id="in-call-controls" style="display: none;">
+                    <button id="toggle-mute-btn" class="control-btn"><i class="gg-icon gg-mic"></i></button>
+                    <button id="toggle-video-btn" class="control-btn"><i class="gg-icon gg-camera"></i></button>
+                    <button id="toggle-chat-btn" class="control-btn"><i class="gg-icon gg-comment"></i></button>
+                    <button id="end-call-btn" class="control-btn red"><i class="gg-icon gg-phone"></i></button>
+                </div>
+                <!-- واجهة الشات أثناء المكالمة -->
+                <div id="chat-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- قائمة التفاعل مع الصديق -->
+    <ul id="friend-context-menu">
+        <li id="context-menu-video-call"><i class="gg-icon gg-camera"></i> مكالمة فيديو</li>
+        <li id="context-menu-voice-call"><i class="gg-icon gg-phone"></i> مكالمة صوتية</li>
+        <li id="context-menu-chat"><i class="gg-icon gg-comment"></i> محادثة</li>
+        <li id="context-menu-remove"><i class="gg-icon gg-close"></i> حذف الصديق</li>
+    </ul>
+
+    <!-- نافذة الإعدادات وإضافة الأصدقاء -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close-btn"><i class="gg-icon gg-close"></i></button>
+            <!-- محتوى النافذة سيتم إنشاؤه بواسطة JavaScript -->
+        </div>
+    </div>
+
+
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <script src="js/script.js"></script>
+    <!-- استدعاء السكريبتات كـ module للسماح بالـ import/export -->
+    <script type="module" src="firebase-init.js"></script>
+    <script type="module" src="script.js"></script>
+    <audio id="ringtone" src="ringtone.mp3" loop></audio>
 </body>
+</html>
 </html>
