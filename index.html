@@ -4,12 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calling App</title>
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/phone.css" rel="stylesheet">
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/mic.css" rel="stylesheet">
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/mic-off.css" rel="stylesheet">
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/camera.css" rel="stylesheet">
-    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/no-camera.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/comment.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/more-vertical.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/user.css" rel="stylesheet">
@@ -17,6 +11,12 @@
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/close.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/check.css" rel="stylesheet">
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/add.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/no-camera.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/camera.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/mic-off.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/mic.css" rel="stylesheet">
+    <link href="https://unpkg.com/css.gg@2.0.0/icons/css/phone.css" rel="stylesheet">
+    <title>Calling App</title>
     <link href="https://unpkg.com/css.gg@2.0.0/icons/css/copy.css" rel="stylesheet">
 
     <style>
@@ -129,60 +129,11 @@
         .control-btn { background: rgba(255,255,255,0.2); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; }
         .control-btn.red { background-color: var(--red); }
         .gg-icon { --ggs: 1.2; }
-
-        /* Responsive Design for Mobile/Tablets */
-        @media (max-width: 768px) {
-            #sidebar {
-                width: 100%;
-                height: 100%;
-                border-left: none;
-                position: absolute;
-                z-index: 10;
-            }
-            #main-content {
-                width: 100%;
-            }
-            .auth-form {
-                width: 90%;
-            }
-            .modal-content {
-                width: 90vw;
-                height: 80vh;
-                overflow-y: auto;
-            }
-            #local-video {
-                width: 35vw; /* Make local video larger on mobile */
-            }
-            #in-call-controls {
-                padding: 10px 20px;
-                gap: 15px;
-            }
-            .control-btn { width: 55px; height: 55px; }
-            .gg-icon { --ggs: 1.4; }
-        }
     </style>
 </head>
 <body>
-    <!-- Loader Screen -->
-    <div id="loader-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: #222; z-index: 9999;">
-        <style>
-            .spinner {
-                border: 4px solid rgba(255, 255, 255, 0.3);
-                border-radius: 50%;
-                border-top: 4px solid #fff;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-        <div class="spinner"></div>
-    </div>
     <!-- Auth Screen -->
-    <div id="auth-container" style="display: none;">
+    <div id="auth-container" style="display: flex;">
         <form id="login-form" class="auth-form">
             <h2>تسجيل الدخول</h2>
             <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
@@ -212,7 +163,10 @@
         </div>
     </div>
 
-    <!-- Incoming Call Screen -->
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Main App Screen -->
     <div id="incoming-call-container">
         <div class="caller-info">
             <img id="caller-avatar" src="https://via.placeholder.com/100" alt="Caller Avatar">
@@ -223,12 +177,7 @@
             <button id="reject-btn" title="رفض"><i class="gg-icon gg-phone"></i></button>
         </div>
     </div>
-
-    <!-- Notification Container -->
-    <div id="notification-container"></div>
-
-    <!-- Main App Screen -->
-    <div id="app-container">
+    <div id="app-container" style="display: none;">
         <div id="sidebar">
             <div id="sidebar-header">
                 <img id="sidebar-avatar" src="https://via.placeholder.com/40" alt="My Avatar">
