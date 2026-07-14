@@ -1,5 +1,5 @@
 import { auth, db, storage } from './firebase-init.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail, deleteUser, sendEmailVerification } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, deleteField, onSnapshot, arrayUnion, arrayRemove, writeBatch, serverTimestamp, addDoc, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const authError = document.getElementById('auth-error');
     const toggleToSignup = document.getElementById('toggle-to-signup');
     const toggleToLogin = document.getElementById('toggle-to-login');
+    const verifyEmailContainer = document.getElementById('verify-email-container');
     
     const sidebar = document.getElementById('sidebar');
     const sidebarAvatar = document.getElementById('sidebar-avatar');
@@ -67,12 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Auth & UI State ---
     function showApp() {
         authContainer.style.display = 'none';
+        verifyEmailContainer.style.display = 'none';
         appContainer.style.display = 'flex';
         start();
     }
 
     function showAuth() {
         authContainer.style.display = 'flex';
+        loginForm.style.display = 'flex';
+        signupForm.style.display = 'none';
+        verifyEmailContainer.style.display = 'none';
         appContainer.style.display = 'none';
         if (localStream) localStream.getTracks().forEach(track => track.stop());
         if (peer && !peer.destroyed) peer.destroy();
@@ -84,41 +89,94 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = signupForm.querySelector('#signup-email').value.trim();
         const password = signupForm.querySelector('#signup-password').value;
         const avatarFile = signupForm.querySelector('#signup-avatar').files[0];
+        const signupButton = signupForm.querySelector('button[type="submit"]');
+        const signupError = document.getElementById('signup-error');
 
         if (!username || !email || !password) {
-            authError.textContent = "يرجى ملء جميع الحقول.";
+            signupError.textContent = "الرجاء ملء جميع الحقول.";
             return;
         }
+        signupButton.disabled = true;
+        signupError.textContent = ''; // Clear previous errors
+
         try {
-            authError.textContent = 'جاري إنشاء الحساب...';
+            // 1. Check if username exists
+            signupButton.textContent = 'التحقق من اسم المستخدم...';
             const q = query(collection(db, "users"), where("username", "==", username));
             const querySnapshot = await getDocs(q);
             if (!querySnapshot.empty) {
-                authError.textContent = "اسم المستخدم هذا مستخدم بالفعل.";
+                signupError.textContent = "اسم المستخدم هذا مستخدم بالفعل.";
+                signupButton.disabled = false;
+                signupButton.textContent = 'إنشاء حساب';
                 return;
             }
 
+            // 2. Create user with email and password
+            signupButton.textContent = 'جاري إنشاء الحساب...';
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            // From this point on, if anything fails, we must delete the created user.
             const user = userCredential.user;
 
+            // 3. Upload avatar if it exists
             let photoURL = null;
             if (avatarFile) {
+                signupButton.textContent = 'جاري رفع الصورة...';
                 const storageRef = ref(storage, `profile_pictures/${user.uid}`);
                 const snapshot = await uploadBytes(storageRef, avatarFile);
                 photoURL = await getDownloadURL(snapshot.ref);
             }
 
+            // 4. Update Firebase Auth profile
+            await updateProfile(user, { displayName: username, photoURL });
+
+            // 5. Create user document in Firestore
+            signupButton.textContent = 'جاري حفظ البيانات...';
             await setDoc(doc(db, "users", user.uid), {
-                username, email, photoURL,
+                username,
+                email,
+                photoURL,
                 createdAt: serverTimestamp(),
                 friends: []
             });
 
-            await updateProfile(user, { displayName: username, photoURL });
-            console.log("Account created successfully!");
+            // 6. Send verification email
+            await sendEmailVerification(user);
+
+            // The onAuthStateChanged listener will handle showing the app.
+            signupError.textContent = 'تم! تحقق من بريدك الإلكتروني للتفعيل.';
+            console.log("Account created successfully! Waiting for auth state change.");
+            // The button will be re-enabled/hidden by the view change, no need to touch it here.
+
         } catch (error) {
             console.error("Signup Error:", error);
-            authError.textContent = "حدث خطأ. (قد يكون الإيميل مستخدماً أو كلمة المرور ضعيفة)";
+
+            // **Robust Error Handling**: If user creation succeeded in Auth but a later step failed,
+            // delete the partially created user to allow them to try again cleanly.
+            if (error.code !== 'auth/email-already-in-use' && error.code !== 'auth/weak-password') {
+                const user = auth.currentUser;
+                if (user && user.email === email) { // Ensure we are deleting the correct user
+                    try {
+                        await deleteUser(user);
+                        console.log("Partial user deleted due to signup failure.");
+                    } catch (deleteError) {
+                        console.error("CRITICAL: Failed to delete partial user:", deleteError);
+                    }
+                }
+            }
+
+            // Provide more specific feedback to the user
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    signupError.textContent = 'هذا البريد الإلكتروني مستخدم بالفعل.';
+                    break;
+                case 'auth/weak-password':
+                    signupError.textContent = 'كلمة المرور ضعيفة جدًا (6 أحرف على الأقل).';
+                    break;
+                default: // For other errors, including network issues or invalid emails
+                    signupError.textContent = "حدث خطأ. تأكد من صحة البيانات واتصالك بالإنترنت.";
+            }
+            signupButton.disabled = false;
+            signupButton.textContent = 'إنشاء حساب';
         }
     }
 
@@ -136,8 +194,59 @@ document.addEventListener('DOMContentLoaded', () => {
             authError.textContent = '';
         } catch (error) {
             console.error("Login Error:", error);
-            authError.textContent = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+            // Provide more specific feedback for login errors
+            switch (error.code) {
+                case 'auth/user-not-found':
+                case 'auth/wrong-password':
+                case 'auth/invalid-credential':
+                    authError.textContent = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+                    break;
+                default:
+                    authError.textContent = "حدث خطأ أثناء محاولة تسجيل الدخول.";
+                    break;
+            }
         }
+    }
+
+    async function handlePasswordReset() {
+        const email = prompt("الرجاء إدخال بريدك الإلكتروني لإرسال رابط إعادة تعيين كلمة المرور:");
+        if (!email) return;
+
+        const errorEl = document.getElementById('auth-error');
+        errorEl.textContent = 'جاري إرسال البريد...';
+        try {
+            await sendPasswordResetEmail(auth, email);
+            alert(`تم إرسال رابط إعادة تعيين كلمة المرور إلى ${email}. يرجى التحقق من بريدك الوارد (والبريد المزعج).`);
+            errorEl.textContent = '';
+        } catch (error) {
+            console.error("Password Reset Error:", error);
+            switch (error.code) {
+                case 'auth/user-not-found':
+                    errorEl.textContent = "لم يتم العثور على حساب مرتبط بهذا البريد الإلكتروني.";
+                    break;
+                default:
+                    errorEl.textContent = "حدث خطأ أثناء محاولة إرسال البريد الإلكتروني.";
+            }
+        }
+    }
+
+    function showVerificationScreen() {
+        authContainer.style.display = 'flex';
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'none';
+        verifyEmailContainer.style.display = 'block';
+        appContainer.style.display = 'none';
+
+        document.getElementById('resend-verification-email').onclick = async () => {
+            const errorEl = document.getElementById('verify-email-error');
+            try {
+                await sendEmailVerification(auth.currentUser);
+                errorEl.textContent = 'تم إرسال بريد التفعيل مرة أخرى.';
+            } catch (error) {
+                errorEl.textContent = 'حدث خطأ. يرجى المحاولة بعد قليل.';
+            }
+        };
+        document.getElementById('back-to-login').onclick = handleLogout;
     }
 
     async function handleLogout() {
@@ -465,11 +574,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 4. Event Listeners ---
+    // **الحل النهائي: ربط الأحداث مباشرة عند تحميل الصفحة**
     loginForm.addEventListener('submit', handleLogin);
     signupForm.addEventListener('submit', handleSignup);
     toggleToSignup.addEventListener('click', () => {
         loginForm.style.display = 'none';
         signupForm.style.display = 'flex';
+        document.getElementById('signup-error').textContent = '';
         authError.textContent = '';
     });
     toggleToLogin.addEventListener('click', () => {
@@ -477,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.style.display = 'flex';
         authError.textContent = '';
     });
+    // The forgot password listener is added in the final block
     friendsList.addEventListener('click', (e) => {
         const friendItem = e.target.closest('.friend-item');
         if (!friendItem) return;
@@ -563,6 +675,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Final event listener attachment
+    document.getElementById('forgot-password').addEventListener('click', handlePasswordReset);
+
     // --- 5. App Initialization ---
     async function start() {
         try {
@@ -575,13 +690,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     onAuthStateChanged(auth, (user) => {
-        if (user && user.displayName) { // Check for displayName to ensure profile is updated
-            currentUser = user;
-            sidebarAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
-            sidebarUsername.textContent = user.displayName;
-            showApp();
-            listenForFriends();
-            listenForNotifications();
+        if (user) { // المستخدم سجل دخوله
+            if (user.emailVerified) { // وبريده الإلكتروني مفعل
+                currentUser = user;
+                sidebarAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
+                sidebarUsername.textContent = user.displayName;
+                showApp();
+                listenForFriends();
+                listenForNotifications();
+            } else { // المستخدم سجل دخوله لكن بريده غير مفعل
+                currentUser = null;
+                showVerificationScreen();
+            }
         } else {
             currentUser = null;
             showAuth();
