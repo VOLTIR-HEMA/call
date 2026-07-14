@@ -5,11 +5,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase
 import { getStorage } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 // 2. معلومات إعداد مشروعك من Firebase
+// تأكد من أن هذه البيانات هي نفسها الموجودة في مشروعك على Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDvYc9qhzLizUTXRZOsOoqJenbgf1gdP78",
   authDomain: "calling-91b94.firebaseapp.com",
   projectId: "calling-91b94",
-  storageBucket: "calling-91b94.appspot.com", // تأكد من أن هذا هو النطاق الصحيح
+  storageBucket: "calling-91b94.appspot.com",
   messagingSenderId: "558871808940",
   appId: "1:558871808940:web:f0a659d8315c85a3aac809",
 };
