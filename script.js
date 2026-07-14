@@ -549,8 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2.5 وظائف نظام الأصدقاء ---
 
-    async function searchUsers(searchTerm) {
-        searchResultsList.innerHTML = '';
+    async function searchUsers(searchTerm, resultsContainer) {
+        resultsContainer.innerHTML = '';
         if (searchTerm.length < 3) return;
 
         const q = query(collection(db, "users"), where("username", ">=", searchTerm), where("username", "<=", searchTerm + '\uf8ff'));
@@ -566,10 +566,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>${userData.username}</span>
                 <button data-uid="${doc.id}">إضافة</button>
             `;
-            searchResultsList.appendChild(resultElement);
+            resultsContainer.appendChild(resultElement);
         });
 
-        searchResultsList.querySelectorAll('button').forEach(button => {
+        resultsContainer.querySelectorAll('button').forEach(button => {
             button.addEventListener('click', (e) => sendFriendRequest(e.target.dataset.uid));
         });
     }
@@ -603,10 +603,11 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("تم إرسال طلب الصداقة.");
     }
 
-    function listenForFriendRequests() {
+    function listenForFriendRequests(requestsContainer) {
         const q = query(collection(db, "friend_requests"), where("to", "==", currentUser.uid), where("status", "==", "pending"));
         onSnapshot(q, async (snapshot) => {
-            requestsList.innerHTML = '';
+            if (!requestsContainer) return; // التأكد من وجود الحاوية
+            requestsContainer.innerHTML = '';
             for (const requestDoc of snapshot.docs) {
                 const requestData = requestDoc.data();
                 const fromUserDoc = await getDoc(doc(db, "users", requestData.from));
@@ -622,11 +623,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="reject-btn" data-id="${requestDoc.id}">رفض</button>
                     </div>
                 `;
-                requestsList.appendChild(requestElement);
+                requestsContainer.appendChild(requestElement);
             }
 
-            requestsList.querySelectorAll('.accept-btn').forEach(btn => btn.addEventListener('click', (e) => acceptFriendRequest(e.target.dataset.id, e.target.dataset.from)));
-            requestsList.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', (e) => deleteFriendRequest(e.target.dataset.id)));
+            requestsContainer.querySelectorAll('.accept-btn').forEach(btn => btn.addEventListener('click', (e) => acceptFriendRequest(e.target.dataset.id, e.target.dataset.from)));
+            requestsContainer.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', (e) => deleteFriendRequest(e.target.dataset.id)));
         });
     }
 
@@ -994,7 +995,6 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebarAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
             sidebarUsername.textContent = user.displayName || user.email.split('@')[0];
             showApp();
-            listenForFriendRequests();
             listenForFriends();
             listenForNotifications();
 
