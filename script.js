@@ -4,7 +4,6 @@ import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, dele
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-    const loaderContainer = document.getElementById('loader-container');
     // --- 1. DOM Elements ---
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
@@ -68,15 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Auth & UI State ---
     function showApp() {
-        loaderContainer.style.display = 'none';
         authContainer.style.display = 'none';
-        verifyEmailContainer.style.display = 'none';
         appContainer.style.display = 'flex';
         start();
     }
 
     function showAuth() {
-        loaderContainer.style.display = 'none';
         authContainer.style.display = 'flex';
         loginForm.style.display = 'flex';
         signupForm.style.display = 'none';
@@ -234,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showVerificationScreen() {
-        loaderContainer.style.display = 'none';
         authContainer.style.display = 'flex';
         loginForm.style.display = 'none';
         signupForm.style.display = 'none';
@@ -263,6 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         Object.values(listeners).forEach(unsubscribe => unsubscribe && unsubscribe());
         await signOut(auth);
+    }
+
+    function generateRandomId() {
+        return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     }
 
     // --- PeerJS & Calling ---
@@ -360,8 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const presenceDoc = await getDoc(doc(db, "presence", userId));
             if (!presenceDoc.exists() || presenceDoc.data().status !== 'online') return alert("هذا المستخدم غير متصل حالياً.");
             
-            const stream = await navigator.mediaDevices.getUserMedia({ video, audio: true });
-
             localVideo.srcObject = stream;
             localStream = stream;
             
@@ -668,7 +665,6 @@ document.addEventListener('DOMContentLoaded', () => {
     answerBtn.addEventListener('click', async () => {
         if (incomingCall) {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 const stream = await checkAndRequestPermissions();
                 if (!stream) return; // Stop if permissions were not granted
 
@@ -719,15 +715,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('forgot-password').addEventListener('click', handlePasswordReset);
 
     // --- 5. App Initialization ---
-    async function start() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            stream.getTracks().forEach(track => track.stop());
-            initializePeer();
-        } catch (err) {
-            alert('فشل الوصول إلى الكاميرا أو المايكروفون. يرجى التأكد من منح الإذن وتحديث الصفحة.');
-        }
-        // We no longer need to request permissions here. Just initialize PeerJS.
+    function start() {
         initializePeer();
     }
 
@@ -736,7 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (user.emailVerified) { // وبريده الإلكتروني مفعل
                 currentUser = user;
                 sidebarAvatar.src = user.photoURL || 'https://via.placeholder.com/40';
-                sidebarUsername.textContent = user.displayName;
+                sidebarUsername.textContent = user.displayName || 'مستخدم جديد';
                 showApp();
                 listenForFriends();
                 listenForNotifications();
