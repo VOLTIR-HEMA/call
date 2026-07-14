@@ -4,6 +4,7 @@ import { doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, dele
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 
 document.addEventListener('DOMContentLoaded', () => {
+    const loaderContainer = document.getElementById('loader-container');
     // --- 1. DOM Elements ---
     const authContainer = document.getElementById('auth-container');
     const appContainer = document.getElementById('app-container');
@@ -67,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Auth & UI State ---
     function showApp() {
+        loaderContainer.style.display = 'none';
         authContainer.style.display = 'none';
         verifyEmailContainer.style.display = 'none';
         appContainer.style.display = 'flex';
@@ -74,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showAuth() {
+        loaderContainer.style.display = 'none';
         authContainer.style.display = 'flex';
         loginForm.style.display = 'flex';
         signupForm.style.display = 'none';
@@ -231,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showVerificationScreen() {
+        loaderContainer.style.display = 'none';
         authContainer.style.display = 'flex';
         loginForm.style.display = 'none';
         signupForm.style.display = 'none';
@@ -346,6 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function startCall(username, video = true) {
         try {
+            const stream = await checkAndRequestPermissions();
+            if (!stream) return; // Stop if permissions were not granted
+
             const userQuery = query(collection(db, "users"), where("username", "==", username.toLowerCase()));
             const userSnapshot = await getDocs(userQuery);
             if (userSnapshot.empty) return alert("لم يتم العثور على مستخدم بهذا الاسم.");
@@ -354,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!presenceDoc.exists() || presenceDoc.data().status !== 'online') return alert("هذا المستخدم غير متصل حالياً.");
             
             const stream = await navigator.mediaDevices.getUserMedia({ video, audio: true });
+
             localVideo.srcObject = stream;
             localStream = stream;
             
@@ -362,6 +370,34 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Start call error:", err);
             alert("فشل بدء المكالمة. تأكد من أذونات الكاميرا/المايكروفون.");
+        }
+    }
+
+    // --- Permissions Handling ---
+    async function checkAndRequestPermissions() {
+        try {
+            // Check camera permission status
+            const cameraPerm = await navigator.permissions.query({ name: 'camera' });
+            // Check microphone permission status
+            const micPerm = await navigator.permissions.query({ name: 'microphone' });
+
+            if (cameraPerm.state === 'denied' || micPerm.state === 'denied') {
+                alert('تم حظر أذونات الكاميرا أو المايكروفون. يرجى السماح بالوصول من إعدادات المتصفح للموقع الحالي ثم تحديث الصفحة.');
+                return null;
+            }
+
+            // If permissions are not denied, try to get the stream. This will prompt if needed.
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            return stream;
+
+        } catch (err) {
+            console.error("Permission/Media Error:", err);
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                 alert('لقد رفضت أذونات الكاميرا/المايكروفون. لاستخدام المكالمات، يرجى السماح بالوصول من إعدادات المتصفح.');
+            } else {
+                 alert('فشل الوصول للكاميرا أو المايكروفون. قد يكونان مستخدمان بواسطة تطبيق آخر. يرجى التأكد وإعادة المحاولة.');
+            }
+            return null;
         }
     }
 
@@ -633,6 +669,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (incomingCall) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const stream = await checkAndRequestPermissions();
+                if (!stream) return; // Stop if permissions were not granted
+
                 localVideo.srcObject = stream;
                 localStream = stream;
                 incomingCall.answer(stream);
@@ -643,6 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 incomingCall = null;
             } catch(err) {
                 alert("فشل الرد على المكالمة. تأكد من أذونات الكاميرا/المايكروفون.");
+                console.error("Answer call error:", err);
             }
         }
     });
@@ -687,6 +727,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             alert('فشل الوصول إلى الكاميرا أو المايكروفون. يرجى التأكد من منح الإذن وتحديث الصفحة.');
         }
+        // We no longer need to request permissions here. Just initialize PeerJS.
+        initializePeer();
     }
 
     onAuthStateChanged(auth, (user) => {
