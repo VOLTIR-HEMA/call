@@ -129,11 +129,60 @@
         .control-btn { background: rgba(255,255,255,0.2); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; color: white; display: flex; justify-content: center; align-items: center; }
         .control-btn.red { background-color: var(--red); }
         .gg-icon { --ggs: 1.2; }
+
+        /* Responsive Design for Mobile/Tablets */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 100%;
+                height: 100%;
+                border-left: none;
+                position: absolute;
+                z-index: 10;
+            }
+            #main-content {
+                width: 100%;
+            }
+            .auth-form {
+                width: 90%;
+            }
+            .modal-content {
+                width: 90vw;
+                height: 80vh;
+                overflow-y: auto;
+            }
+            #local-video {
+                width: 35vw; /* Make local video larger on mobile */
+            }
+            #in-call-controls {
+                padding: 10px 20px;
+                gap: 15px;
+            }
+            .control-btn { width: 55px; height: 55px; }
+            .gg-icon { --ggs: 1.4; }
+        }
     </style>
 </head>
 <body>
+    <!-- Loader Screen -->
+    <div id="loader-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: #222; z-index: 9999;">
+        <style>
+            .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top: 4px solid #fff;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+        <div class="spinner"></div>
+    </div>
     <!-- Auth Screen -->
-    <div id="auth-container">
+    <div id="auth-container" style="display: none;">
         <form id="login-form" class="auth-form">
             <h2>تسجيل الدخول</h2>
             <input type="email" id="login-email" placeholder="البريد الإلكتروني" required>
@@ -154,13 +203,13 @@
             <p id="signup-error" style="color: var(--red); text-align: center; height: 20px; min-height: 20px;"></p>
             <p>لديك حساب بالفعل؟ <span id="toggle-to-login" class="toggle-form">سجل الدخول</span></p>
         </form>
-    </div>
-    <div id="verify-email-container" style="display: none; text-align: center; color: white; padding: 20px;">
-        <h2>الرجاء تفعيل حسابك</h2>
-        <p>لقد أرسلنا رابط تفعيل إلى بريدك الإلكتروني. الرجاء الضغط على الرابط لتتمكن من استخدام التطبيق.</p>
-        <p style="margin-top: 20px;">لم تستلم البريد؟ <span id="resend-verification-email" class="toggle-form">إعادة إرسال</span></p>
-        <p style="margin-top: 10px;"><span id="back-to-login" class="toggle-form">العودة لتسجيل الدخول</span></p>
-        <p id="verify-email-error" style="color: var(--red); height: 20px; min-height: 20px;"></p>
+        <div id="verify-email-container" style="display: none; text-align: center; color: white; padding: 20px;">
+            <h2>الرجاء تفعيل حسابك</h2>
+            <p>لقد أرسلنا رابط تفعيل إلى بريدك الإلكتروني. الرجاء الضغط على الرابط لتتمكن من استخدام التطبيق.</p>
+            <p style="margin-top: 20px;">لم تستلم البريد؟ <span id="resend-verification-email" class="toggle-form">إعادة إرسال</span></p>
+            <p style="margin-top: 10px;"><span id="back-to-login" class="toggle-form">العودة لتسجيل الدخول</span></p>
+            <p id="verify-email-error" style="color: var(--red); height: 20px; min-height: 20px;"></p>
+        </div>
     </div>
 
     <!-- Incoming Call Screen -->
