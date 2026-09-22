@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOLTIR Cyber - البوابة الرئيسية</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #0a0e17;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* خلفية هندسية خفيفة جداً بدون صور */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 210, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+            top: 10%;
+            left: 15%;
+            z-index: 0;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 0, 128, 0.1) 0%, rgba(0,0,0,0) 70%);
+            bottom: 5%;
+            right: 10%;
+            z-index: 0;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: rgba(18, 26, 38, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(0, 230, 118, 0.15);
+            color: #00e676;
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .welcome-text {
+            font-size: 15px;
+            color: #a0aec0;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .feature-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px 10px;
+            font-size: 13px;
+            color: #e2e8f0;
+        }
+
+        .feature-box strong {
+            display: block;
+            color: #00d2ff;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        .footer-note {
+            font-size: 12px;
+            color: #718096;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 20px;
+        }
+
+        .footer-note span {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="status-badge">● تم الاتصال بنجاح</div>
+    <div class="logo">VOLTIR CYBER</div>
+    <p class="welcome-text">مرحباً بك في شبكتنا. نتمنى لك تجربة تصفح سريعة ومستقرة.</p>
+
+    <div class="features">
+        <div class="feature-box">
+            <strong>سرعة عالية</strong>
+            أداء ممتاز للتصفح
+        </div>
+        <div class="feature-box">
+            <strong>اتصال آمن</strong>
+            حماية للبيانات
+        </div>
+    </div>
+
+    <div class="footer-note">
+        لأي استفسارات أو لتجديد الاشتراك، يرجى التواصل مع <span>إدارة الشبكة</span>.
+    </div>
+</div>
+
+</body>
+</html>
